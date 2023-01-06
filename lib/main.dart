@@ -19,7 +19,7 @@ final GoRouter _router = GoRouter(
         GoRoute(
           path: 'wirter',
           builder: (BuildContext context, GoRouterState state) {
-            return const WriterPage();
+            return WriterPage();
           },
         ),
       ],
@@ -29,8 +29,6 @@ final GoRouter _router = GoRouter(
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
