@@ -1,8 +1,20 @@
 import 'package:flutter/material.dart';
-import 'pages/writer.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:getwidget/getwidget.dart';
 import 'package:go_router/go_router.dart';
+import 'package:oktoast/oktoast.dart';
+import 'package:provider/provider.dart';
+import 'package:thinwrite/provider/local_storage.dart';
+import 'package:thinwrite/pages/new_diary.dart';
 
-void main() {
+import 'package:thinwrite/pages/setting.dart';
+import 'package:thinwrite/pages/shelf.dart';
+import 'package:thinwrite/provider/profile.dart';
+
+import 'pages/writer.dart';
+
+void main() async {
+  await GetStorage.init();
   runApp(const MyApp());
 }
 
@@ -15,30 +27,63 @@ final GoRouter _router = GoRouter(
           title: 'ThinWrite',
         );
       },
-      routes: <RouteBase>[
-        GoRoute(
-          path: 'wirter',
-          builder: (BuildContext context, GoRouterState state) {
-            return WriterPage();
-          },
-        ),
-      ],
     ),
+    GoRoute(
+        path: '/shelf',
+        builder: (BuildContext context, GoRouterState state) {
+          return const ShelfPage();
+        },
+        routes: [
+          GoRoute(
+            path: 'new_diary',
+            builder: (BuildContext context, GoRouterState state) {
+              return const PageNewDiary();
+            },
+          ),
+          GoRoute(
+            path: 'writer',
+            builder: (BuildContext context, GoRouterState state) {
+              return const WriterPage();
+            },
+          ),
+          GoRoute(
+            path: 'setting',
+            builder: (BuildContext context, GoRouterState state) {
+              return const SettingPage();
+            },
+          ),
+        ]),
   ],
 );
+
+final LocalStorage localStorage = LocalStorage();
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'ThinWrite',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      routerConfig: _router,
-    );
+    return OKToast(
+        child: MultiProvider(
+            providers: [
+          ChangeNotifierProvider.value(value: localStorage),
+          ChangeNotifierProvider.value(
+              value: localStorage.isEnableWebDav
+                  ? ProfileProvider.link(
+                      server: localStorage.webDavServer,
+                      account: localStorage.webDavAccount,
+                      password: localStorage.webDavPassword)
+                  : ProfileProvider.local()),
+          // ListenableProvider<ProfileProvider>(
+          //     create: (_) => ProfileProvider.local()),
+        ],
+            child: MaterialApp.router(
+              title: 'ThinWrite',
+              debugShowCheckedModeBanner: false,
+              theme: ThemeData(
+                primarySwatch: Colors.blue,
+              ),
+              routerConfig: _router,
+            )));
   }
 }
 
@@ -51,14 +96,6 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return SelectionArea(
@@ -69,19 +106,24 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Center(
         child: Column(
           children: [
-            Text('$_counter'),
-            ElevatedButton(
-              child: const Text('Go Write Page'),
+            GFButtonBadge(
+              color: Colors.blueAccent,
+              text: 'Wirter',
               onPressed: () => context.go('/wirter'),
-            )
+            ),
+            GFButtonBadge(
+              color: Colors.redAccent,
+              text: 'Shelf',
+              onPressed: () => context.go('/shelf'),
+            ),
+            GFButtonBadge(
+              color: Colors.redAccent,
+              text: 'Setting',
+              onPressed: () => context.go('/setting'),
+            ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     ));
   }
 }

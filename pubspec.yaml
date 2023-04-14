@@ -37,7 +37,20 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
   rich_editor: ^0.0.5
-  webdav_client: ^1.1.8
+  webdav_client: ^1.2.0
+  chat_gpt_sdk: ^2.0.6
+  material_buttonx: ^2.0.3
+  getwidget: ^3.0.1
+  expandable: ^5.0.1
+  flutter_markdown: ^0.6.14
+  provider:
+  go_router:
+  oktoast: 
+  path_provider: ^2.0.14
+  file_selector: ^0.9.2+4
+  file_picker: ^5.2.9
+  get_storage: ^2.1.1
+  path: ^1.8.2
 
 dev_dependencies:
   flutter_test:
@@ -49,8 +62,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^2.0.0
-  provider:
-  go_router:
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
