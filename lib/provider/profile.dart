@@ -20,7 +20,8 @@ class ProfileProvider extends ChangeNotifier {
   String? webdavPassword;
   webdav.Client? webdavClient;
 
-  List<ConfigFile> _diaryInfoList = [];
+  final List<ConfigFile> _diaryInfoList = [];
+  final Map<String, List<String>> _diaryFileNameList = {};
   Directory? _cachePath;
 
   webdav.Client linkWebDAV(
@@ -207,17 +208,35 @@ class ProfileProvider extends ChangeNotifier {
     return _createWebNewDiary(diaryName, localImagePath, description);
   }
 
+  Future<void> downloadCover(String diaryName, String localCoverPath) async {
+    return _saveWebCover2Cache(
+        curDiaryCoverPath(diaryName, getExtFromPath(localCoverPath)));
+  }
+
+  Future<void> saveCoverCache(String diaryName, String localCoverPath) async {
+    File localCover = File(localCoverPath);
+    File newCoverFile = File(getCacheCoverPath(
+        curDiaryCoverPath(diaryName, getExtFromPath(localCoverPath))));
+    await newCoverFile.create(recursive: true);
+    await localCover.copy(getCacheCoverPath(
+        curDiaryCoverPath(diaryName, getExtFromPath(localCoverPath))));
+  }
+
   Future<void> _saveWebCover2Cache(String webCoverPath) async {
     assert(isEnableWebDav);
-    print(getCacheCoverPath(webCoverPath));
-    return webdavClient!
-        .read2File(webCoverPath, getCacheCoverPath(webCoverPath));
+    if (await File(getCacheCoverPath(webCoverPath)).exists() == false) {
+      await webdavClient!
+          .read2File(webCoverPath, getCacheCoverPath(webCoverPath));
+    }
   }
+
+  List<String>? getDiaryFileNameList(String diaryName) =>
+      _diaryFileNameList[diaryName];
 
   Future<void> _getWebDiaryInfoList() async {
     assert(isEnableWebDav);
     _diaryInfoList.clear();
-    getTemporaryDirectory().then((value) => _cachePath = value);
+    getApplicationDocumentsDirectory().then((value) => _cachePath = value);
     List<webdav.File> fileList = await webdavClient!.readDir(diaryDir);
     for (webdav.File file in fileList) {
       ConfigFile conf = await getConfigFile(file.name!);

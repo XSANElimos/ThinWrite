@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:provider/provider.dart';
 import 'package:thinwrite/class/weather.dart';
+import 'package:thinwrite/provider/profile.dart';
 
 String header = '';
 String content = '';
@@ -24,8 +26,8 @@ String markdownHeaderCreater(DateTime time, Weather weather, String mood) {
 }
 
 class WriterPage extends StatefulWidget {
-  const WriterPage({Key? key}) : super(key: key);
-
+  const WriterPage({Key? key, required this.diaryName}) : super(key: key);
+  final String diaryName;
   @override
   State<WriterPage> createState() => _WriterPageState();
 }
@@ -33,9 +35,12 @@ class WriterPage extends StatefulWidget {
 class _WriterPageState extends State<WriterPage> {
   late PageController pageCtrler;
   late ControlStickController csCtrler;
+  final DateTime curDatetime = DateTime.now();
+  late String curDate;
   bool isEditMode = false;
   @override
   void initState() {
+    curDate = '${curDatetime.year}.${curDatetime.month}.${curDatetime.day}';
     csCtrler = ControlStickController();
     pageCtrler = PageController();
     csCtrler.addListener(() {
@@ -59,22 +64,55 @@ class _WriterPageState extends State<WriterPage> {
     });
   }
 
+  List<ListTile> getTocFromNameList(List<String>? nameList) {
+    List<ListTile> ret = [];
+    if (nameList == null) {
+      return ret;
+    }
+    for (var fileName in nameList) {
+      ret.add(ListTile(
+        title: Text(fileName),
+        onTap: () {
+          setState(() {
+            curDate = fileName;
+          });
+        },
+      ));
+    }
+    return ret;
+  }
+
   @override
   Widget build(BuildContext context) {
+    ProfileProvider profile = context.read<ProfileProvider>();
+
     return SafeArea(
         child: Scaffold(
       appBar: AppBar(
-        title: const Text('0'),
+        title: Text(widget.diaryName),
         actions: [
           IconButton(
-            icon: const Icon(Icons.edit),
+            icon: isEditMode
+                ? const Icon(Icons.chrome_reader_mode_outlined)
+                : const Icon(Icons.edit),
             onPressed: () => _switchViewMode(),
           ),
-          IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () {},
-          )
+          Builder(
+              builder: (context) => IconButton(
+                    icon: const Icon(Icons.menu),
+                    onPressed: () {
+                      Scaffold.of(context).openEndDrawer();
+                    },
+                  ))
         ],
+      ),
+      endDrawer: Drawer(
+        child: ListView.builder(
+            itemCount: getTocFromNameList(
+                    profile.getDiaryFileNameList(widget.diaryName))
+                .length,
+            itemBuilder: (_, index) => getTocFromNameList(
+                profile.getDiaryFileNameList(widget.diaryName))[index]),
       ),
       body:
           isEditMode ? const EditModeView() : Markdown(data: header + content),

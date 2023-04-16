@@ -43,7 +43,10 @@ final GoRouter _router = GoRouter(
           GoRoute(
             path: 'writer',
             builder: (BuildContext context, GoRouterState state) {
-              return const WriterPage();
+              assert(state.extra is String);
+              return WriterPage(
+                diaryName: state.extra as String,
+              );
             },
           ),
           GoRoute(

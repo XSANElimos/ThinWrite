@@ -48,9 +48,13 @@ class _PageNewDiaryState extends State<PageNewDiary> {
                     .createNewDiary(diaryNameController.text, imageFilePath,
                         diaryDescController.text)
                     .then((value) {
-                  dismissAllToast();
-                  showToast('保存成功');
-                  context.pop();
+                  profile
+                      .saveCoverCache(diaryNameController.text, imageFilePath)
+                      .then((value) {
+                    dismissAllToast();
+                    showToast('保存成功');
+                    context.pop();
+                  });
                 });
               }
             },
@@ -110,10 +114,17 @@ class SavingDlg extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Card(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: const <Widget>[CircularProgressIndicator(), Text('保存中...')],
+        child: Padding(
+          padding:
+              const EdgeInsets.symmetric(vertical: 20.0, horizontal: 100.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: const <Widget>[
+              CircularProgressIndicator(),
+              Text('保存中...')
+            ],
+          ),
         ),
       ),
     );

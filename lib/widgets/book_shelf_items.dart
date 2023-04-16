@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
@@ -19,10 +20,23 @@ final List<Color> colorList = [
 ];
 
 class ShelfItemState extends State<ShelfItem> {
+  Widget errorBuilder(
+      BuildContext context, Object object, StackTrace? stackTrace) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: const <Widget>[
+          Icon(Icons.nearby_error_rounded),
+          Text('图片加载失败')
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () => context.go('/shelf/writer'),
+      onTap: () => context.go('/shelf/writer', extra: widget.title),
       child: Card(
         color: null == widget.cover
             ? colorList[Random(DateTime.now().millisecondsSinceEpoch)
@@ -35,30 +49,26 @@ class ShelfItemState extends State<ShelfItem> {
                 fit: StackFit.expand,
                 alignment: Alignment.center,
                 children: [
-                  Image.network(widget.cover!,
-                      fit: BoxFit.fill,
-                      errorBuilder: (context, error, stackTrace) => Center(
-                            child: TextButton.icon(
-                                onPressed: () {},
-                                onLongPress: () {},
-                                icon: const Icon(Icons.nearby_error_rounded),
-                                label: const Text('图片加载失败,长按重试')),
-                          ),
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (null == loadingProgress) {
-                          return child;
-                        } else {
-                          return Center(
-                            child: CircularProgressIndicator(
-                              value:
-                                  (null == loadingProgress.expectedTotalBytes)
-                                      ? null
-                                      : loadingProgress.cumulativeBytesLoaded /
-                                          loadingProgress.expectedTotalBytes!,
-                            ),
-                          );
-                        }
-                      }),
+                  Image.file(File(widget.cover!),
+                      fit: BoxFit.cover, errorBuilder: errorBuilder),
+                  // Image.network(widget.cover!,
+                  //     fit: BoxFit.fill,
+                  //     errorBuilder: errorBuilder,
+                  //     loadingBuilder: (context, child, loadingProgress) {
+                  //       if (null == loadingProgress) {
+                  //         return child;
+                  //       } else {
+                  //         return Center(
+                  //           child: CircularProgressIndicator(
+                  //             value:
+                  //                 (null == loadingProgress.expectedTotalBytes)
+                  //                     ? null
+                  //                     : loadingProgress.cumulativeBytesLoaded /
+                  //                         loadingProgress.expectedTotalBytes!,
+                  //           ),
+                  //         );
+                  //       }
+                  //     }),
                   Positioned(
                     bottom: -1.0,
                     child: Text(
