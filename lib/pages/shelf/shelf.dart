@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:getwidget/getwidget.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:thinwrite/class/config_file.dart';
-import 'package:thinwrite/provider/profile.dart';
+import 'package:thinwrite/common/entity/config_file.dart';
+import 'package:thinwrite/common/values/profile.dart';
 
-import 'package:thinwrite/widgets/book_shelf_items.dart';
+import 'package:thinwrite/pages/shelf/item_widgets.dart';
 
 class ShelfPage extends StatelessWidget {
   const ShelfPage({Key? key}) : super(key: key);

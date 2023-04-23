@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:getwidget/getwidget.dart';
 import 'package:oktoast/oktoast.dart';
 import 'package:provider/provider.dart';
-import 'package:thinwrite/provider/local_storage.dart';
+import 'package:thinwrite/common/values/local_storage.dart';
 
-import 'package:thinwrite/provider/profile.dart';
+import 'package:thinwrite/common/values/profile.dart';
 
 class SettingPage extends StatefulWidget {
   const SettingPage({Key? key}) : super(key: key);
@@ -42,10 +42,8 @@ class _SettingPageState extends State<SettingPage> {
   @override
   Widget build(BuildContext context) {
     ProfileProvider profile = context.watch<ProfileProvider>();
-    LocalStorage localStorage = context.watch<LocalStorage>();
-
-    String wdServer = context.watch<ProfileProvider>().webdavServer ?? '';
-    String wdAccount = context.watch<ProfileProvider>().webdavAccount ?? '';
+    String wdServer = profile.localStorage.webDavServer;
+    String wdAccount = profile.localStorage.webDavAccount;
 
     return SafeArea(
       child: Scaffold(
@@ -107,10 +105,6 @@ class _SettingPageState extends State<SettingPage> {
                                   server: newServerEditController.text,
                                   account: newAccountEditController.text,
                                   password: newPasswordEditController.text)) {
-                                localStorage.updateWebDav(
-                                    server: newServerEditController.text,
-                                    account: newAccountEditController.text,
-                                    password: newPasswordEditController.text);
                                 showToast('Connect Success!');
                               } else {
                                 showToast('Connect Failed!');

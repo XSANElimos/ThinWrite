@@ -1,11 +1,16 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
+
+import 'entity.dart';
+
 /// [.config]
 ///
 /// 1    diary name
 /// 2    cover path
 /// 3    description
+/// 4    toc
 ///
 
 enum ConfigItem { coverPath, description }
@@ -15,36 +20,37 @@ class ConfigFile {
   String diaryName;
   String coverPath;
   String description;
+  List<Toc> tocList;
   ConfigFile({
     required this.diaryName,
     required this.coverPath,
     required this.description,
+    required this.tocList,
   }) {
     _argv.addAll([coverPath, description]);
   }
-  void setArgv(ConfigItem item, String value) => _argv[item.index] = value;
-  String getArgv(ConfigItem item) => _argv[item.index];
-  factory ConfigFile.fromData(String data) {
-    final List<String> argvList = data.split('\n');
-    return ConfigFile(
-        diaryName: argvList[0],
-        coverPath: argvList[1],
-        description: argvList[2]);
-  }
 
-  String toData() {
-    return '$diaryName\n$coverPath\n$description\n';
+  bool get isHasCover => coverPath.isNotEmpty;
+
+  factory ConfigFile.empty() {
+    return ConfigFile(
+        coverPath: "", diaryName: "", description: "", tocList: []);
   }
+  void setArgv(ConfigItem item, String value) => _argv[item.index] = value;
+
+  String getArgv(ConfigItem item) => _argv[item.index];
 
   ConfigFile copyWith({
     String? diaryName,
     String? coverPath,
     String? description,
+    List<Toc>? tocList,
   }) {
     return ConfigFile(
       diaryName: diaryName ?? this.diaryName,
       coverPath: coverPath ?? this.coverPath,
       description: description ?? this.description,
+      tocList: tocList ?? this.tocList,
     );
   }
 
@@ -53,6 +59,7 @@ class ConfigFile {
       'diaryName': diaryName,
       'coverPath': coverPath,
       'description': description,
+      'tocList': tocList.map((x) => x.toMap()).toList(),
     };
   }
 
@@ -61,6 +68,11 @@ class ConfigFile {
       diaryName: map['diaryName'] as String,
       coverPath: map['coverPath'] as String,
       description: map['description'] as String,
+      tocList: List<Toc>.from(
+        (map['tocList'] as List<int>).map<Toc>(
+          (x) => Toc.fromMap(x as Map<String, dynamic>),
+        ),
+      ),
     );
   }
 
@@ -71,7 +83,7 @@ class ConfigFile {
 
   @override
   String toString() {
-    return 'ConfigFile( diaryName: $diaryName, coverPath: $coverPath, description: $description)';
+    return 'ConfigFile(diaryName: $diaryName, coverPath: $coverPath, description: $description, tocList: $tocList)';
   }
 
   @override
@@ -80,11 +92,15 @@ class ConfigFile {
 
     return other.diaryName == diaryName &&
         other.coverPath == coverPath &&
-        other.description == description;
+        other.description == description &&
+        listEquals(other.tocList, tocList);
   }
 
   @override
   int get hashCode {
-    return diaryName.hashCode ^ coverPath.hashCode ^ description.hashCode;
+    return diaryName.hashCode ^
+        coverPath.hashCode ^
+        description.hashCode ^
+        tocList.hashCode;
   }
 }

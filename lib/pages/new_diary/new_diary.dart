@@ -6,7 +6,7 @@ import 'package:getwidget/getwidget.dart';
 import 'package:go_router/go_router.dart';
 import 'package:oktoast/oktoast.dart';
 import 'package:provider/provider.dart';
-import 'package:thinwrite/provider/profile.dart';
+import 'package:thinwrite/common/values/profile.dart';
 
 class PageNewDiary extends StatefulWidget {
   const PageNewDiary({Key? key}) : super(key: key);
@@ -20,14 +20,14 @@ class _PageNewDiaryState extends State<PageNewDiary> {
       TextEditingController(text: '新建日记本');
   TextEditingController diaryDescController =
       TextEditingController(text: '介绍一下吧');
-  String imageFilePath = '';
+  String? imageFilePath;
 
   void _loadCover() async {
     FilePickerResult? result =
         await FilePicker.platform.pickFiles(type: FileType.image);
     if (result != null) {
       setState(() {
-        imageFilePath = result.files.single.path ?? '';
+        imageFilePath = result.files.single.path;
       });
     }
   }
@@ -44,17 +44,19 @@ class _PageNewDiaryState extends State<PageNewDiary> {
               showToastWidget(const SavingDlg(),
                   duration: const Duration(minutes: 1));
               if (diaryNameController.text.isNotEmpty) {
-                profile
-                    .createNewDiary(diaryNameController.text, imageFilePath,
-                        diaryDescController.text)
-                    .then((value) {
-                  profile
-                      .saveCoverCache(diaryNameController.text, imageFilePath)
-                      .then((value) {
-                    dismissAllToast();
+                profile.diaryManager
+                    .createNewDiaryBook(
+                        diaryName: diaryNameController.text,
+                        description: diaryDescController.text,
+                        coverPath: imageFilePath)
+                    .then((result) {
+                  dismissAllToast();
+                  if (result) {
                     showToast('保存成功');
-                    context.pop();
-                  });
+                  } else {
+                    showToast('保存失败，可能已有同名日记本');
+                  }
+                  context.pop();
                 });
               }
             },
@@ -72,10 +74,10 @@ class _PageNewDiaryState extends State<PageNewDiary> {
                     const BoxConstraints(maxHeight: 150, maxWidth: 150),
                 child: TextButton(
                   onPressed: () => _loadCover(),
-                  child: imageFilePath.isEmpty
+                  child: imageFilePath == null
                       ? const Text('添加封面')
                       : Image.file(
-                          File(imageFilePath),
+                          File(imageFilePath!),
                         ),
                 ),
               ),

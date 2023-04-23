@@ -1,4 +1,5 @@
 enum Weather {
+  unknown,
   sunny,
   windy,
   raining;
