@@ -4,7 +4,7 @@ import 'package:thinwrite/pages/pages.dart';
 
 class ThinWriteRouter {
   static final GoRouter router = GoRouter(
-    initialLocation: '/shelf',
+    initialLocation: '/welcome',
     routes: <RouteBase>[
       GoRoute(
         path: '/welcome',
@@ -17,7 +17,7 @@ class ThinWriteRouter {
           builder: (BuildContext context, GoRouterState state) {
             return const ShelfPage();
           },
-          routes: [
+          routes: <RouteBase>[
             GoRoute(
               path: 'new_diary',
               builder: (BuildContext context, GoRouterState state) {

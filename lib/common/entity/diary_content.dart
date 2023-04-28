@@ -47,6 +47,17 @@ class DiaryContent {
         body: "");
   }
 
+  factory DiaryContent.time(DateTime time) {
+    return DiaryContent(
+        targetTime: time,
+        createTime: time,
+        modifyTime: time,
+        weather: Weather.unknown,
+        mood: Mood.unknown,
+        oneSentenceSummary: "",
+        body: "");
+  }
+
   Future<void> loadFromFile(String filePath) async {
     File file = File(filePath);
     List<String> content = await file.readAsLines();
@@ -63,11 +74,14 @@ class DiaryContent {
     }
   }
 
+  String get getHeaderTime =>
+      '${targetTime.year}年${targetTime.month}月${targetTime.day}日';
+
   String get header {
     String ret = '''
 # ${targetTime.year}年${targetTime.month}月${targetTime.day}日 ${weather.toChinese()}
 ### $mood
-| oneSentenceSummary
+| $oneSentenceSummary
 
 ---
 

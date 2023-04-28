@@ -40,6 +40,24 @@ class ConfigFile {
 
   String getArgv(ConfigItem item) => _argv[item.index];
 
+  void updateTocList(DiaryContent diaryContent) {
+    bool isNeedNew = true;
+    for (var toc in tocList) {
+      if (DiaryBook.timeToString(toc.date) ==
+          DiaryBook.timeToString(diaryContent.targetTime)) {
+        toc.preview = diaryContent.oneSentenceSummary;
+        isNeedNew = false;
+      }
+    }
+    if (isNeedNew) {
+      tocList.insert(
+          0,
+          Toc(
+              date: diaryContent.targetTime,
+              preview: diaryContent.oneSentenceSummary));
+    }
+  }
+
   ConfigFile copyWith({
     String? diaryName,
     String? coverPath,
@@ -61,19 +79,6 @@ class ConfigFile {
       'description': description,
       'tocList': tocList.map((x) => x.toMap()).toList(),
     };
-  }
-
-  factory ConfigFile.fromMap(Map<String, dynamic> map) {
-    return ConfigFile(
-      diaryName: map['diaryName'] as String,
-      coverPath: map['coverPath'] as String,
-      description: map['description'] as String,
-      tocList: List<Toc>.from(
-        (map['tocList'] as List<int>).map<Toc>(
-          (x) => Toc.fromMap(x as Map<String, dynamic>),
-        ),
-      ),
-    );
   }
 
   String toJson() => json.encode(toMap());
@@ -102,5 +107,20 @@ class ConfigFile {
         coverPath.hashCode ^
         description.hashCode ^
         tocList.hashCode;
+  }
+
+  factory ConfigFile.fromMap(Map<String, dynamic> map) {
+    return ConfigFile(
+      diaryName: map['diaryName'] as String,
+      coverPath: map['coverPath'] as String,
+      description: map['description'] as String,
+      tocList: List<Toc>.from(
+        (map['tocList'].cast<Map<String, dynamic>>()
+                as List<Map<String, dynamic>>)
+            .map<Toc>(
+          (x) => Toc.fromMap(x as Map<String, dynamic>),
+        ),
+      ),
+    );
   }
 }

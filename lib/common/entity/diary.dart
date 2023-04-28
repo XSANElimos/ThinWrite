@@ -1,5 +1,4 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -11,7 +10,7 @@ import 'package:thinwrite/common/utils/utils.dart';
 
 class DiaryBook {
   ConfigFile configFile;
-  List<DiaryContent> contentList;
+  Map<DateTime, DiaryContent> contentList;
   bool isHasCover;
 
   DiaryBook({
@@ -20,6 +19,37 @@ class DiaryBook {
     required this.isHasCover,
   });
 
+  static String timeToString(DateTime time) =>
+      '${time.year}${time.month}${time.day}';
+
+  bool get isEmpty => configFile == ConfigFile.empty() ? true : false;
+
+  DiaryContent? getContent(DateTime date) {
+    DiaryContent? ret;
+    contentList.forEach((dataTime, content) {
+      if (timeToString(dataTime) == timeToString(date)) {
+        ret = content;
+      }
+    });
+    return ret;
+  }
+
+  DiaryContent newPage(DateTime date) {
+    DiaryContent? ret;
+    contentList.forEach((key, value) {
+      if (timeToString(key) == timeToString(date)) {
+        ret = value;
+      }
+    });
+    ret ??= DiaryContent.time(date);
+    configFile.updateTocList(ret!);
+    contentList[date] = ret!;
+    return ret!;
+  }
+
+  factory DiaryBook.empty() => DiaryBook(
+      configFile: ConfigFile.empty(), contentList: {}, isHasCover: false);
+
   Future<void> initLocal(String rootPath) async {
     Directory localDiaryDir = Directory(
         PathManager.getLocalDiaryPathS(rootPath, configFile.diaryName));
@@ -27,12 +57,15 @@ class DiaryBook {
     await writeLocalConfigFile(
         PathManager.getLocalConfigPathS(rootPath, configFile.diaryName));
     if (configFile.coverPath.isNotEmpty) {
-      writeLocalCoverFile(
+      await writeLocalCoverFile(
           PathManager.getLocalCoverPathS(
               rootPath, configFile.diaryName, configFile.coverPath),
           await File(configFile.coverPath).readAsBytes());
     }
   }
+
+  String getLocalCoverPath(String rootPath) => PathManager.getLocalCoverPathS(
+      rootPath, configFile.diaryName, configFile.coverPath);
 
   static Future<DiaryBook?> readFromLocal(
       String rootPath, String diaryName) async {
@@ -46,13 +79,15 @@ class DiaryBook {
       return null;
     }
     ConfigFile config = ConfigFile.fromJson(await confFile.readAsString());
-    List<DiaryContent> contentList = [];
+    Map<DateTime, DiaryContent> contentList = {};
     var subDirList = dir.list();
     subDirList.forEach((entity) async {
-      if (entity is File) {
+      if (entity is File &&
+          p.basenameWithoutExtension(entity.path) != 'cover') {
         DiaryContent diaryContent =
             DiaryContent.fromJson(await entity.readAsString());
-        contentList.add(diaryContent);
+        DateTime fileTime = diaryContent.targetTime;
+        contentList[fileTime] = diaryContent;
       }
     });
     return DiaryBook(
@@ -67,13 +102,15 @@ class DiaryBook {
       required webdav.Client webdavClient}) async {
     Directory localDiaryDir =
         Directory(PathManager.getLocalDiaryPathS(rootPath, diaryName));
-    await localDiaryDir.create(recursive: true);
+    if (!await localDiaryDir.exists()) {
+      await localDiaryDir.create(recursive: true);
+    }
     List<webdav.File> fileList =
         await webdavClient.readDir(PathManager.getRemoteDiaryPath(diaryName));
     for (webdav.File file in fileList) {
       if (file.name != null) {
         await webdavClient.read2File(
-            file.name!,
+            file.path!,
             p.join(PathManager.getLocalDiaryPathS(rootPath, diaryName),
                 file.name!));
       }
@@ -81,12 +118,34 @@ class DiaryBook {
     return await readFromLocal(rootPath, diaryName);
   }
 
-  Future<void> uploadToServer() async {}
+  Future<void> uploadToServer(
+      {required String rootPath, required webdav.Client webdavClient}) async {
+    Directory localDiaryDir = Directory(
+        PathManager.getLocalDiaryPathS(rootPath, configFile.diaryName));
+    localDiaryDir.list().forEach((element) async {
+      if (element is File) {
+        await webdavClient.writeFromFile(element.path,
+            '${PathManager.getRemoteDiaryPath(configFile.diaryName)}/${p.basename(element.path)}');
+      }
+    });
+    await webdavClient.writeFromFile(
+        PathManager.getLocalConfigPathS(rootPath, configFile.diaryName),
+        PathManager.getRemoteConfigPath(configFile.diaryName));
+    if (configFile.isHasCover) {
+      await webdavClient.writeFromFile(
+          PathManager.getLocalCoverPathS(
+              rootPath, configFile.diaryName, configFile.coverPath),
+          PathManager.getRemoteCoverPath(
+              configFile.diaryName, configFile.coverPath));
+    }
+  }
 
   Future<void> writeLocalDiaryFile(
       String localDiaryPath, DiaryContent diaryContent) async {
     File diaryFile = File(localDiaryPath);
-    await diaryFile.create(recursive: true, exclusive: true);
+    if (!await diaryFile.exists()) {
+      await diaryFile.create(recursive: true, exclusive: false);
+    }
     await diaryFile.writeAsString(diaryContent.toJson());
   }
 
@@ -98,10 +157,12 @@ class DiaryBook {
               configFile.diaryName, PathManager.getDiaryPageName(filePath)));
 
   Future<void> writeLocalCoverFile(
-      String localCoverPath, List<int> imageData) async {
+      String localCoverPath, Uint8List imageData) async {
     File coverFile = File(localCoverPath);
-    await coverFile.create(recursive: true, exclusive: true);
-    await coverFile.writeAsBytes(imageData);
+    if (!await coverFile.exists()) {
+      await coverFile.create(recursive: true, exclusive: true);
+      await coverFile.writeAsBytes(imageData);
+    }
   }
 
   Future<void> writeWebCoverFile(
@@ -111,7 +172,9 @@ class DiaryBook {
 
   Future<void> writeLocalConfigFile(String filePath) async {
     File confFile = File(filePath);
-    await confFile.create(recursive: true, exclusive: true);
+    if (!await confFile.exists()) {
+      await confFile.create(recursive: true, exclusive: true);
+    }
     await confFile.writeAsString(configFile.toJson());
   }
 
@@ -120,57 +183,7 @@ class DiaryBook {
       await webdavClient.write(
           filePath, Uint8List.fromList(configFile.toJson().codeUnits));
 
-  DiaryBook copyWith({
-    ConfigFile? configFile,
-    List<DiaryContent>? contentList,
-    bool? isHasCover,
-  }) {
-    return DiaryBook(
-      configFile: configFile ?? this.configFile,
-      contentList: contentList ?? this.contentList,
-      isHasCover: isHasCover ?? this.isHasCover,
-    );
-  }
-
-  Map<String, dynamic> toMap() {
-    return <String, dynamic>{
-      'configFile': configFile.toMap(),
-      'contentList': contentList.map((x) => x.toMap()).toList(),
-      'isHasCover': isHasCover,
-    };
-  }
-
-  factory DiaryBook.fromMap(Map<String, dynamic> map) {
-    return DiaryBook(
-      configFile: ConfigFile.fromMap(map['configFile'] as Map<String, dynamic>),
-      contentList: List<DiaryContent>.from(
-        (map['contentList'] as List<int>).map<DiaryContent>(
-          (x) => DiaryContent.fromMap(x as Map<String, dynamic>),
-        ),
-      ),
-      isHasCover: map['isHasCover'] as bool,
-    );
-  }
-
-  String toJson() => json.encode(toMap());
-
-  factory DiaryBook.fromJson(String source) =>
-      DiaryBook.fromMap(json.decode(source) as Map<String, dynamic>);
-
   @override
   String toString() =>
       'Diary(configFile: $configFile, contentList: $contentList, isHasCover: $isHasCover)';
-
-  @override
-  bool operator ==(covariant DiaryBook other) {
-    if (identical(this, other)) return true;
-
-    return other.configFile == configFile &&
-        listEquals(other.contentList, contentList) &&
-        other.isHasCover == isHasCover;
-  }
-
-  @override
-  int get hashCode =>
-      configFile.hashCode ^ contentList.hashCode ^ isHasCover.hashCode;
 }

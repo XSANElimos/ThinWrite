@@ -4,6 +4,7 @@ import 'package:get_storage/get_storage.dart';
 enum CacheType {
   isNeedInit,
   isEnableWebDav,
+  isWebDavReady,
   webDavServer,
   webDavAccount,
   webDavPassword,
@@ -16,6 +17,8 @@ class LocalStorage with ChangeNotifier {
 
   bool get isEnableWebDav => _dataList[CacheType.isEnableWebDav] ?? false;
 
+  bool get isWebDavReady => _dataList[CacheType.isWebDavReady] ?? false;
+
   String get webDavServer => _dataList[CacheType.webDavServer] ?? '';
 
   String get webDavAccount => _dataList[CacheType.webDavAccount] ?? '';
@@ -24,6 +27,11 @@ class LocalStorage with ChangeNotifier {
 
   LocalStorage() {
     _writeIfNull(CacheType.isNeedInit, true);
+    _writeIfNull(CacheType.isEnableWebDav, false);
+    _writeIfNull(CacheType.isWebDavReady, false);
+    _writeIfNull(CacheType.webDavServer, '');
+    _writeIfNull(CacheType.webDavAccount, '');
+    _writeIfNull(CacheType.webDavPassword, '');
     if (_read<bool>(CacheType.isNeedInit)) {
       _initLocalStorage();
     } else {
@@ -33,12 +41,18 @@ class LocalStorage with ChangeNotifier {
 
   void updateWebDav({String? server, String? account, String? password}) {
     if (server == null || account == null || password == null) {
-      _updateValue(CacheType.isEnableWebDav, false);
+      if (isEnableWebDav == false && isWebDavReady == true) {
+        _updateValue(CacheType.isEnableWebDav, true);
+      } else {
+        _updateValue(CacheType.isEnableWebDav, false);
+      }
     } else {
       _updateValue(CacheType.webDavServer, server);
       _updateValue(CacheType.webDavAccount, account);
       _updateValue(CacheType.webDavPassword, password);
+      _updateValue(CacheType.isWebDavReady, true);
       _updateValue(CacheType.isEnableWebDav, true);
+      saveLocalStorage();
     }
   }
 

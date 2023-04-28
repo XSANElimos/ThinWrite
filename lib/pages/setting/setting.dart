@@ -50,83 +50,102 @@ class _SettingPageState extends State<SettingPage> {
           appBar: AppBar(title: const Text('Setting Page')),
           body: ListView(
             children: [
-              ExpandablePanel(
-                header: ListTile(
-                  title: const Text('WebDav Config'),
-                  subtitle: Text(wdServer),
-                ),
-                controller: webDavCardController,
-                collapsed: GFCard(
-                    title: GFListTile(
-                      title: Center(child: Text(wdAccount)),
+              Container(
+                padding: const EdgeInsets.all(8),
+                margin: const EdgeInsets.all(8),
+                child: Card(
+                  child: ExpandablePanel(
+                    header: ListTile(
+                      title: const Text('WebDav Config'),
+                      subtitle: Text(wdServer),
                     ),
-                    buttonBar: GFButtonBar(children: <Widget>[
-                      GFButton(onPressed: () {}, text: 'Reset'),
-                      GFButton(
-                        onPressed: () {},
-                        text: 'Enable',
-                      )
-                    ])),
-                expanded: Container(
-                  padding: const EdgeInsets.all(8),
-                  margin: const EdgeInsets.all(8),
-                  child: Column(
-                    children: <Widget>[
-                      TextField(
-                        controller: newServerEditController,
-                        textAlign: TextAlign.center,
-                        decoration: const InputDecoration(
-                            label: Center(child: Text('Server Address'))),
-                      ),
-                      TextField(
-                        controller: newAccountEditController,
-                        textAlign: TextAlign.center,
-                        decoration: const InputDecoration(
-                            label: Center(child: Text('Account'))),
-                      ),
-                      TextField(
-                        controller: newPasswordEditController,
-                        textAlign: TextAlign.center,
-                        decoration: const InputDecoration(
-                            label: Center(child: Text('Password'))),
-                      ),
-                      ButtonBar(
+                    controller: webDavCardController,
+                    collapsed: Padding(
+                      padding: const EdgeInsets.all(18.0),
+                      child: Row(
                         children: [
+                          Text(wdAccount),
                           const Spacer(),
                           OutlinedButton(
-                            onPressed: () {
-                              webDavCardController.toggle();
-                            },
-                            child: const Text('Cancel'),
-                          ),
-                          OutlinedButton(
-                            onPressed: () async {
-                              if (await profile.changeServerProfile(
-                                  server: newServerEditController.text,
-                                  account: newAccountEditController.text,
-                                  password: newPasswordEditController.text)) {
-                                showToast('Connect Success!');
-                              } else {
-                                showToast('Connect Failed!');
-                              }
-                            },
-                            child: const Text('Connect'),
-                          ),
+                              onPressed: () {
+                                profile.updateHandle(
+                                    handle: profile.localStorage.updateWebDav);
+                              },
+                              child: Text(profile.localStorage.isEnableWebDav
+                                  ? 'Disable'
+                                  : 'Enable'))
                         ],
-                      )
-                    ],
+                      ),
+                    ),
+                    expanded: Column(
+                      children: <Widget>[
+                        TextField(
+                          controller: newServerEditController,
+                          textAlign: TextAlign.center,
+                          decoration: const InputDecoration(
+                              label: Center(child: Text('Server Address'))),
+                        ),
+                        TextField(
+                          controller: newAccountEditController,
+                          textAlign: TextAlign.center,
+                          decoration: const InputDecoration(
+                              label: Center(child: Text('Account'))),
+                        ),
+                        TextField(
+                          controller: newPasswordEditController,
+                          textAlign: TextAlign.center,
+                          decoration: const InputDecoration(
+                              label: Center(child: Text('Password'))),
+                        ),
+                        ButtonBar(
+                          children: [
+                            const Spacer(),
+                            OutlinedButton(
+                              onPressed: () {
+                                webDavCardController.toggle();
+                              },
+                              child: const Text('Cancel'),
+                            ),
+                            OutlinedButton(
+                              onPressed: () async {
+                                if (await profile.changeServerProfile(
+                                    server: newServerEditController.text,
+                                    account: newAccountEditController.text,
+                                    password: newPasswordEditController.text)) {
+                                  showToast('Connect Success!');
+                                } else {
+                                  showToast('Connect Failed!');
+                                }
+                              },
+                              child: const Text('Connect'),
+                            ),
+                          ],
+                        )
+                      ],
+                    ),
                   ),
                 ),
               ),
               ListTile(
-                title: Text('sad'),
+                enabled: profile.localStorage.isEnableWebDav,
+                title: const Text('上传到服务器'),
+                onTap: () async {
+                  showToast('上传中!');
+                  await profile.uploadAllDiary();
+                  dismissAllToast();
+                  showToast('上传完成');
+                },
               ),
               ListTile(
-                title: Text('sad'),
-              ),
-              ListTile(
-                title: Text('sad'),
-              ),
+                enabled: profile.localStorage.isEnableWebDav,
+                title: const Text('从服务器下载'),
+                onTap: () async {
+                  showToast('下载中!');
+                  await profile.downloadAllDiary();
+                  dismissAllToast();
+                  showToast('下载完成');
+                },
+              )
             ],
           )),
     );

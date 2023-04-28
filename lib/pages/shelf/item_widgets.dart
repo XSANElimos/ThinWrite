@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
 
 class ShelfItem extends StatefulWidget {
   const ShelfItem({Key? key, required this.title, this.cover})
@@ -35,40 +36,29 @@ class ShelfItemState extends State<ShelfItem> {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () => context.go('/shelf/writer', extra: widget.title),
-      child: Card(
-        color: null == widget.cover
-            ? colorList[Random(DateTime.now().millisecondsSinceEpoch)
-                .nextInt(colorList.length)]
-            : null,
-        margin: const EdgeInsets.all(8),
-        child: null == widget.cover
+    String? coverPath = widget.cover;
+    if (coverPath != null &&
+        p.basename(coverPath) == p.basenameWithoutExtension(coverPath)) {
+      coverPath = null;
+    }
+    return Card(
+      color: null == coverPath
+          ? colorList[Random(DateTime.now().millisecondsSinceEpoch)
+              .nextInt(colorList.length)]
+          : null,
+      margin: const EdgeInsets.all(8),
+      child: InkWell(
+        onTap: () => context.go('/shelf/writer', extra: widget.title),
+        child: null == coverPath
             ? Center(child: Text(widget.title))
             : Stack(
                 fit: StackFit.expand,
                 alignment: Alignment.center,
                 children: [
-                  Image.file(File(widget.cover!),
-                      fit: BoxFit.cover, errorBuilder: errorBuilder),
-                  // Image.network(widget.cover!,
-                  //     fit: BoxFit.fill,
-                  //     errorBuilder: errorBuilder,
-                  //     loadingBuilder: (context, child, loadingProgress) {
-                  //       if (null == loadingProgress) {
-                  //         return child;
-                  //       } else {
-                  //         return Center(
-                  //           child: CircularProgressIndicator(
-                  //             value:
-                  //                 (null == loadingProgress.expectedTotalBytes)
-                  //                     ? null
-                  //                     : loadingProgress.cumulativeBytesLoaded /
-                  //                         loadingProgress.expectedTotalBytes!,
-                  //           ),
-                  //         );
-                  //       }
-                  //     }),
+                  Image.file(File(coverPath),
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          errorBuilder(context, error, stackTrace)),
                   Positioned(
                     bottom: -1.0,
                     child: Text(

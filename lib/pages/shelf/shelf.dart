@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:getwidget/getwidget.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:thinwrite/common/entity/config_file.dart';
 import 'package:thinwrite/common/values/profile.dart';
 
 import 'package:thinwrite/pages/shelf/item_widgets.dart';
@@ -17,14 +15,14 @@ class ShelfPage extends StatelessWidget {
             appBar: AppBar(
               title: const Text('书架'),
               actions: [
-                GFButton(
+                OutlinedButton.icon(
                   onPressed: () => context.go('/shelf/new_diary'),
-                  text: '新建',
+                  label: const Text('新建'),
                   icon: const Icon(Icons.add),
                 ),
-                GFButton(
+                TextButton.icon(
                   onPressed: () => context.go('/shelf/setting'),
-                  text: '设置',
+                  label: const Text('设置'),
                   icon: const Icon(Icons.settings),
                 )
               ],
@@ -41,35 +39,51 @@ class DiaryShelfBody extends StatefulWidget {
 }
 
 class _DiaryShelfBodyState extends State<DiaryShelfBody> {
-  late bool isNeedInit;
+  static bool isNeedInit = true;
   List<ShelfItem> configList2ShelfItemList(ProfileProvider profile) {
     List<ShelfItem> ret = [];
-    for (ConfigFile configFile in profile.diaryInfoList) {
+    profile.diaryInfoList.forEach((diaryName, configFile) {
       ret.add(ShelfItem(
           title: configFile.diaryName,
-          cover: profile.getCacheCoverPath(configFile.coverPath)));
-    }
+          cover: profile.diaryManager.getLocalCoverPath(diaryName)));
+    });
     return ret;
   }
 
   Future<List<ShelfItem>> getShelfData(ProfileProvider profile) async {
-    await profile.updateDiaryInfoList();
+    await profile.loadShelfData();
     return configList2ShelfItemList(profile);
   }
 
-  Widget contentBuilder(List<ShelfItem> itemList) {
-    return GridView.builder(
-      itemCount: itemList.length,
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-          childAspectRatio: 3 / 4, maxCrossAxisExtent: 150),
-      itemBuilder: (context, index) => itemList[index],
-    );
+  Future<void> _onRefresh(ProfileProvider profile) async {
+    if (profile.localStorage.isEnableWebDav) {
+      await profile.uploadAllDiary();
+      await profile.downloadAllDiary();
+    }
   }
 
-  @override
-  void initState() {
-    isNeedInit = true;
-    super.initState();
+  Widget contentBuilder(List<ShelfItem> itemList) {
+    ProfileProvider profile = context.watch<ProfileProvider>();
+
+    return RefreshIndicator(
+        onRefresh: () => _onRefresh(profile),
+        semanticsLabel: '正在同步',
+        child: itemList.isNotEmpty
+            ? GridView.builder(
+                itemCount: itemList.length,
+                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    childAspectRatio: 3 / 4, maxCrossAxisExtent: 150),
+                itemBuilder: (context, index) => itemList[index],
+              )
+            : Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const <Widget>[
+                    Text('再怎么看也没有东西啦>﹏< '),
+                    Text('新建一本日记本吧!')
+                  ],
+                ),
+              ));
   }
 
   @override

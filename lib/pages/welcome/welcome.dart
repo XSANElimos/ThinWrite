@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:getwidget/getwidget.dart';
+import 'package:go_router/go_router.dart';
 
 class PageWelcome extends StatefulWidget {
   const PageWelcome({Key? key}) : super(key: key);
@@ -25,7 +27,10 @@ class PageWelcomeState extends State<PageWelcome> {
   }
 
   Widget _buildStartButton() {
-    return const Text('StartButton');
+    return GFButton(
+      onPressed: () => context.go('/shelf'),
+      text: '开始',
+    );
   }
 
   @override

@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 enum Weather {
   unknown,
   sunny,
@@ -16,4 +18,7 @@ enum Weather {
         return '未知天气';
     }
   }
+
+  DropdownMenuEntry<Weather> get dropdownItem =>
+      DropdownMenuEntry(value: this, label: toChinese());
 }

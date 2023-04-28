@@ -10,6 +10,9 @@ class Mood {
     required this.name,
   });
 
+  DropdownMenuEntry<Mood> get dropdownItem =>
+      DropdownMenuEntry(value: this, label: name, leadingIcon: Icon(icon));
+
   static Mood get unknown => Mood(icon: Icons.question_mark, name: 'Unknown');
 
   Mood copyWith({
@@ -42,7 +45,7 @@ class Mood {
       Mood.fromMap(json.decode(source) as Map<String, dynamic>);
 
   @override
-  String toString() => 'Mood(icon: $icon, name: $name)';
+  String toString() => '心情:$name';
 
   @override
   bool operator ==(covariant Mood other) {
